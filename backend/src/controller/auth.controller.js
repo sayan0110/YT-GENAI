@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken'); //npm i jsonwebtoken
 const bcrypt = require('bcryptjs');  //npm i bcryptjs
 
 const userModel = require('../models/user.model')
+const blockedToken = require('../models/userLogout.model')
 
 async function registerUser(req, res) {
     const { userName, email, password } = req.body;
@@ -54,7 +55,7 @@ async function loginUser(req, res) {
         })
     }
 
-    const isUserExists = await userModel.findOne({$or: [{ email }, { userName }]});
+    const isUserExists = await userModel.findOne({ $or: [{ email }, { userName }] });
     if (!isUserExists) {
         return res.status(400).json({
             msg: "User not found"
@@ -85,9 +86,38 @@ async function loginUser(req, res) {
     })
 
 }
+async function logoutUser(req, res) {
+    const token = req.cookies.userToken;
+
+    if (token) {
+        await blockedToken.create({ token })
+    }
+    res.clearCookie("userToken")
+
+    res.status(200).json({
+        msg: "User logged out successfully"
+    })
+}
+
+async function getVerifiedToken(req, res) {
+
+    const verifiedUser = await userModel.findById(req.verifiedUser.id)
+
+    res.status(200).json({
+        msg: "Verified user found successfully",
+        verifiedUser: {
+            id: verifiedUser._id,
+            userName: "Sayan01",
+            email: "sayan@gmail.com",
+        }
+    })
+
+}
 
 module.exports = {
     registerUser,
     loginUser,
+    logoutUser,
+    getVerifiedToken
 
 }
